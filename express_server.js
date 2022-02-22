@@ -39,6 +39,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get('/u/:shortURL', (req, res) => {
+  console.log(res.statusCode);
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 })
@@ -50,6 +51,9 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   const newUrl = req.body.newURL;
+  const shortURL = req.body.shortURL;
+  urlDatabase[shortURL] = newUrl;
+  res.redirect('/urls');
 })
 
 app.post('/urls/:shortURL/delete', (req, res) => {
