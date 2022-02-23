@@ -41,8 +41,17 @@ app.get('/login', (req,res) => {
 })
 
 app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username);
-  res.redirect('/login');
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = exsistingUserByEmail(email);
+  if(!user) {
+    return res.status(403).send('Status code 403. This email address is not registered');
+  }
+  if (user.password !== password) {
+    return res.status(403).send('Status code 403. Your password does not match');
+  }
+  res.cookie('user_id', user.id);
+  res.redirect('/urls');
 });
 
 app.post('/logout', (req, res) => {
@@ -63,15 +72,13 @@ app.post('/register', (req, res) => {
   const userId = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
-  console.log(users);
   if (!email || !password) {
     return res.status(400).send('Status Code: 400. Do not leave password or email blank.');
   }
-  for (const user in users) {
-    if (users[user].email === email) {
+  if (exsistingUserByEmail(email)) {
       return res.status(400).send('Status Code: 400. This email address is already in use.');
-    }
   }
+  
   users[userId] = {
     id: userId,
     email,
@@ -157,4 +164,11 @@ function generateRandomString() {
   return result.trim();
 }
 
+function exsistingUserByEmail(email) {
+  for (const user in users) {
+    if (users[user]['email'] === email) {
+      return users[user];
+    }
+  }
+}
 
