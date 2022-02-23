@@ -12,7 +12,9 @@ app.use(cookieParser());
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
-  res.send("Hello!");
+  const user = req.cookies['user_id'];
+  if (user) return res.redirect('/urls')
+  return res.redirect('/login')
 });
 
 app.get('/login', (req,res) => {
@@ -42,7 +44,7 @@ app.post('/login', (req, res) => {
 
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
-  res.redirect('/urls');
+  res.redirect('/login');
 })
 
 app.get('/register', (req, res) => {
@@ -76,14 +78,10 @@ app.post('/register', (req, res) => {
   res.redirect('/urls');
 })
 
-app.get('/hello', (req,res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
 app.get('/urls', (req, res) => {
   const user = req.cookies['user_id']
   if (!user) {
-    return res.redirect('/login');
+    return res.status(403).send("403: You need to be logged in to see a list of urls");
   }
   urls = urlsByUserID(users[user].id, urlDatabase)
   const templateVars = {
