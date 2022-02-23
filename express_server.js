@@ -31,9 +31,18 @@ app.get('/', (req, res) => {
   res.send("Hello!");
 });
 
+app.get('/login', (req,res) => {
+  const user = req.cookies['user_id'];
+  const templateVars = {
+    urlDatabase,
+    user: users[user]
+  }
+  res.render('login', templateVars);
+})
+
 app.post('/login', (req, res) => {
   res.cookie('username', req.body.username);
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 app.post('/logout', (req, res) => {
@@ -54,6 +63,15 @@ app.post('/register', (req, res) => {
   const userId = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+  console.log(users);
+  if (!email || !password) {
+    return res.status(400).send('Status Code: 400. Do not leave password or email blank.');
+  }
+  for (const user in users) {
+    if (users[user].email === email) {
+      return res.status(400).send('Status Code: 400. This email address is already in use.');
+    }
+  }
   users[userId] = {
     id: userId,
     email,
