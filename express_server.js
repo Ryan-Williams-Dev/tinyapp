@@ -9,8 +9,16 @@ app.use(cookieParser());
 app.set('view engine', 'ejs');
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    shortURL: 'b2xVn2',
+    longURL: "http://www.lighthouselabs.ca",
+    userID: 'userRandomID'
+  },
+  "9sm5xK": {
+    shortURL: '9sm5xK',
+    longURL: "http://www.google.com",
+    userID: 'user2RandomID'
+  }
 };
 
 const users = { 
@@ -44,8 +52,7 @@ app.get('/login', (req,res) => {
 })
 
 app.post('/login', (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
+  const {email, password} = req.body;
   const user = exsistingUserByEmail(email);
   if(!user) {
     return res.status(403).send('Status code 403. This email address is not registered');
@@ -99,13 +106,18 @@ app.get('/hello', (req,res) => {
 
 app.get('/urls', (req, res) => {
   const user = req.cookies['user_id']
+  if (!user) {
+    return res.redirect('/login');
+  }
+  urls = urlsByUserID(users[user].id)
   const templateVars = {
-    urls: urlDatabase,
+    urls,
     user: users[user]
   }
   res.render('urls_index', templateVars);
 });
 
+// this is to add a new url, POST route
 app.post("/urls", (req, res) => {
   const user = req.cookies['user_id']
   if (!user) {
@@ -114,8 +126,13 @@ app.post("/urls", (req, res) => {
   console.log(req.body); 
   longURL = req.body.longURL;
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
-  res.redirect(`/urls/${shortURL}`);
+  urlDatabase[shortURL] = {
+    shortURL,
+    longURL,
+    userID: user
+  };
+  console.log(urlDatabase);
+  res.redirect(`/urls`);
 });
 
 
@@ -133,33 +150,54 @@ app.get("/urls/new", (req, res) => {
 
 // Redirects user to the corresponding long url, aka the key functionality of our website
 app.get('/u/:shortURL', (req, res) => {
-  console.log(res.statusCode);
-  const longURL = urlDatabase[req.params.shortURL];
+  const shortURL = req.params.shortURL;
+  if (!urlDatabase[shortURL]) {
+    return res.status(403).send('Status code 403, This url does not exist');
+  }
+  const longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
 })
 
 app.get("/urls/:shortURL", (req, res) => {
   const user = req.cookies['user_id'];
+  if (!user) {
+    return res.redirect('/login');
+  }
+  urls = urlsByUserID(users[user].id)
+  if (urls[req.params.shortURL] == undefined) {
+    return res.status(403).send("403: this url does not belong to you");
+  }
   const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    shortURL: urls[req.params.shortURL].shortURL,
+    longURL: urls[req.params.shortURL].longURL,
     user: users[user] 
   };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:id", (req, res) => {
+  const user = req.cookies['user_id'];
   const newUrl = req.body.newURL;
   const shortURL = req.body.shortURL;
-  urlDatabase[shortURL] = newUrl;
+  if (!user || user !== urlDatabase[shortURL].userID) {
+    return res.status(403).send('403: You do not have permission to change this url');
+  }
+  urlDatabase[shortURL].longURL = newUrl;
   res.redirect('/urls');
 })
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  delete urlDatabase[req.body.delete];
-  res.redirect('/urls')
+  const user = req.cookies['user_id'];
+  const shortURL = req.params.shortURL;
+  if(!urlDatabase[shortURL]) {
+    return res.status(403).send('403: This url does not exist');
+  }
+  if (urlDatabase[shortURL].userID === user) {
+    delete urlDatabase[req.body.delete];
+    return res.redirect('/urls')
+  }
+  return res.status(403).send('403: You do not have permission to delete this url')
 })
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
@@ -185,3 +223,13 @@ function exsistingUserByEmail(email) {
   }
 }
 
+// fetches all urls for the user id passed into it, returns them in an object with the short url as a the key
+function urlsByUserID(id) {
+  const result = {}
+  for (const url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      result[url] = urlDatabase[url]
+    }
+  }
+  return result;
+} 
