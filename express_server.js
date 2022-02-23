@@ -28,6 +28,10 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls');
 })
 
+app.get('/register', (req, res) => {
+  res.render('register');
+})
+
 app.get('/hello', (req,res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
