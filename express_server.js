@@ -3,37 +3,13 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require('body-parser')
 const cookieParser = require('cookie-parser');
+const { generateRandomString, urlsByUserID, exsistingUserByEmail } = require('./helpers/helpers')
+const { urlDatabase, users } = require('./data/DBs')
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
 app.set('view engine', 'ejs');
-
-const urlDatabase = {
-  "b2xVn2": {
-    shortURL: 'b2xVn2',
-    longURL: "http://www.lighthouselabs.ca",
-    userID: 'userRandomID'
-  },
-  "9sm5xK": {
-    shortURL: '9sm5xK',
-    longURL: "http://www.google.com",
-    userID: 'user2RandomID'
-  }
-};
-
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
-  },
-  "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
-  }
-}  
-
 
 app.get('/', (req, res) => {
   res.send("Hello!");
@@ -53,7 +29,7 @@ app.get('/login', (req,res) => {
 
 app.post('/login', (req, res) => {
   const {email, password} = req.body;
-  const user = exsistingUserByEmail(email);
+  const user = exsistingUserByEmail(email, users);
   if(!user) {
     return res.status(403).send('Status code 403. This email address is not registered');
   }
@@ -88,7 +64,7 @@ app.post('/register', (req, res) => {
   if (!email || !password) {
     return res.status(400).send('Status Code: 400. Do not leave password or email blank.');
   }
-  if (exsistingUserByEmail(email)) {
+  if (exsistingUserByEmail(email, users)) {
       return res.status(400).send('Status Code: 400. This email address is already in use.');
   }
   users[userId] = {
@@ -109,7 +85,7 @@ app.get('/urls', (req, res) => {
   if (!user) {
     return res.redirect('/login');
   }
-  urls = urlsByUserID(users[user].id)
+  urls = urlsByUserID(users[user].id, urlDatabase)
   const templateVars = {
     urls,
     user: users[user]
@@ -163,7 +139,7 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!user) {
     return res.redirect('/login');
   }
-  urls = urlsByUserID(users[user].id)
+  urls = urlsByUserID(users[user].id, urlDatabase)
   if (urls[req.params.shortURL] == undefined) {
     return res.status(403).send("403: this url does not belong to you");
   }
@@ -202,34 +178,3 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
 });
-
-// generates a random string for ID purposes
-function generateRandomString() {
-  const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = ' ';
-  const charactersLength = characters.length;
-  for ( let i = 0; i < 6; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result.trim();
-}
-
-// takes in an email and if there is a user with that email, returns that user.
-function exsistingUserByEmail(email) {
-  for (const user in users) {
-    if (users[user]['email'] === email) {
-      return users[user];
-    }
-  }
-}
-
-// fetches all urls for the user id passed into it, returns them in an object with the short url as a the key
-function urlsByUserID(id) {
-  const result = {}
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      result[url] = urlDatabase[url]
-    }
-  }
-  return result;
-} 
