@@ -33,6 +33,9 @@ app.get('/', (req, res) => {
 
 app.get('/login', (req,res) => {
   const user = req.cookies['user_id'];
+  if (user) {
+    return res.redirect('/urls')
+  }
   const templateVars = {
     urlDatabase,
     user: users[user]
@@ -61,6 +64,9 @@ app.post('/logout', (req, res) => {
 
 app.get('/register', (req, res) => {
   const user = req.cookies['user_id']
+  if (user) {
+    return res.redirect('/urls')
+  }
   const templateVars = {
     urlDatabase,
     user: users[user]
@@ -78,7 +84,6 @@ app.post('/register', (req, res) => {
   if (exsistingUserByEmail(email)) {
       return res.status(400).send('Status Code: 400. This email address is already in use.');
   }
-  
   users[userId] = {
     id: userId,
     email,
@@ -102,17 +107,23 @@ app.get('/urls', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
+  const user = req.cookies['user_id']
+  if (!user) {
+    return res.status(403).send('Status code 403, You cannot add a new url without being logged in')
+  }
+  console.log(req.body); 
   longURL = req.body.longURL;
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = longURL;
-  console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
 
 app.get("/urls/new", (req, res) => {
   const user = req.cookies['user_id']
+  if (!user) {
+    return res.redirect('/login')
+  }
   const templateVars = {
     urlDatabase,
     user: users[user]
@@ -120,6 +131,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+// Redirects user to the corresponding long url, aka the key functionality of our website
 app.get('/u/:shortURL', (req, res) => {
   console.log(res.statusCode);
   const longURL = urlDatabase[req.params.shortURL];
@@ -153,7 +165,7 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
 });
 
-
+// generates a random string for ID purposes
 function generateRandomString() {
   const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = ' ';
@@ -164,6 +176,7 @@ function generateRandomString() {
   return result.trim();
 }
 
+// takes in an email and if there is a user with that email, returns that user.
 function exsistingUserByEmail(email) {
   for (const user in users) {
     if (users[user]['email'] === email) {
