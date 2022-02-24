@@ -11,7 +11,6 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
   keys: ['userID'],
-  maxAge: 24 * 60 * 60 * 1000
 }));
 
 app.set('view engine', 'ejs');
@@ -119,14 +118,14 @@ app.post("/urls", (req, res) => {
     longURL,
     userID: user
   };
-  res.redirect(`/urls`);
+  res.redirect(`/urls/${shortURL}`);
 });
 
 // renders a page in which the user can make a new shortURL by entering a full one. Only is logged in 
 app.get("/urls/new", (req, res) => {
   const user = req.session['userID'];
   if (!user) {
-    return res.status(403).send('403: You need to be logged in to create a new short link url');
+    res.redirect('/login');
   }
   const templateVars = {
     urlDatabase,
@@ -139,7 +138,7 @@ app.get("/urls/new", (req, res) => {
 app.get('/u/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
   if (!urlDatabase[shortURL]) {
-    return res.status(403).send('Status code 403, This url does not exist');
+    return res.status(403).send('404: There is no redirect set up for this url');
   }
   const longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
@@ -149,11 +148,11 @@ app.get('/u/:shortURL', (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const user = req.session['userID'];
   if (!user) {
-    return res.redirect('/login');
+    return res.status(403).send("403: You must be logged in to update URLs");
   }
   const urls = urlsByUserID(users[user].id, urlDatabase);
   if (urls[req.params.shortURL] === undefined) {
-    return res.status(403).send("403: this url does not belong to you");
+    return res.status(403).send("403: You do not own a url with this ID");
   }
   const templateVars = {
     shortURL: urls[req.params.shortURL].shortURL,
