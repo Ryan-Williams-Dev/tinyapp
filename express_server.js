@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require('body-parser')
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs')
 const { generateRandomString, urlsByUserID, exsistingUserByEmail } = require('./helpers/helpers')
 const { urlDatabase, users } = require('./data/DBs')
 
@@ -35,7 +36,7 @@ app.post('/login', (req, res) => {
   if(!user) {
     return res.status(403).send('Status code 403. This email address is not registered');
   }
-  if (user.password !== password) {
+  if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send('Status code 403. Your password does not match');
   }
   res.cookie('user_id', user.id);
@@ -63,6 +64,7 @@ app.post('/register', (req, res) => {
   const userId = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   if (!email || !password) {
     return res.status(400).send('Status Code: 400. Do not leave password or email blank.');
   }
@@ -72,7 +74,7 @@ app.post('/register', (req, res) => {
   users[userId] = {
     id: userId,
     email,
-    password
+    password: hashedPassword
   };
   res.cookie('user_id', userId);
   res.redirect('/urls');
@@ -105,7 +107,6 @@ app.post("/urls", (req, res) => {
     longURL,
     userID: user
   };
-  console.log(urlDatabase);
   res.redirect(`/urls`);
 });
 
@@ -113,7 +114,7 @@ app.post("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const user = req.cookies['user_id']
   if (!user) {
-    return res.redirect('/login')
+    return res.status(403).send('403: You need to be logged in to create a new short link url')
   }
   const templateVars = {
     urlDatabase,
