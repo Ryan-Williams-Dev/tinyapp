@@ -17,8 +17,8 @@ app.set('view engine', 'ejs');
 
 // Default '/' route driects to either the urls page, or the log in page. depending on if the client is logged in or not
 app.get('/', (req, res) => {
-  const user = req.session['userID'];
-  if (user) {
+  const userID = req.session['userID'];
+  if (userID) {
     return res.redirect('/urls');
   }
   return res.redirect('/login');
@@ -26,13 +26,13 @@ app.get('/', (req, res) => {
 
 // Route to the login page
 app.get('/login', (req,res) => {
-  const user = req.session['userID'];
-  if (user) {
+  const userID = req.session['userID'];
+  if (userID) {
     return res.redirect('/urls');
   }
   const templateVars = {
     urlDatabase,
-    user: users[user]
+    user: users[userID]
   };
   res.render('login', templateVars);
 });
@@ -59,20 +59,20 @@ app.post('/logout', (req, res) => {
 
 // route to render the register user page & form
 app.get('/register', (req, res) => {
-  const user = req.session['userID'];
-  if (user) {
+  const userID = req.session['userID'];
+  if (userID) {
     return res.redirect('/urls');
   }
   const templateVars = {
     urlDatabase,
-    user: users[user]
+    user: users[userID]
   };
   res.render('register', templateVars);
 });
 
 // this route checks the imput from the register form and creates a new user in the database with a generated ID, and if successful, logs the user in.
 app.post('/register', (req, res) => {
-  const userId = generateRandomString();
+  const userID = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -82,33 +82,33 @@ app.post('/register', (req, res) => {
   if (getUserByEmail(email, users)) {
     return res.status(400).send('Status Code: 400. This email address is already in use.');
   }
-  users[userId] = {
-    id: userId,
+  users[userID] = {
+    id: userID,
     email,
     password: hashedPassword
   };
-  req.session['userID'] = userId;
+  req.session['userID'] = userID;
   res.redirect('/urls');
 });
 
 // this route renders the template for the urls page, which lists every url registered under the current user. redirects if user is not logged in.
 app.get('/urls', (req, res) => {
-  const user = req.session['userID'];
-  if (!user) {
+  const userID = req.session['userID'];
+  if (!userID) {
     return res.status(403).send("403: You need to be logged in to see a list of urls");
   }
-  const urls = urlsByUserID(users[user].id, urlDatabase);
+  const urls = urlsByUserID(users[userID].id, urlDatabase);
   const templateVars = {
     urls,
-    user: users[user]
+    user: users[userID]
   };
   res.render('urls_index', templateVars);
 });
 
 // this is to add a new url to the url database, POST route
 app.post("/urls", (req, res) => {
-  const user = req.session['userID'];
-  if (!user) {
+  const userID = req.session['userID'];
+  if (!userID) {
     return res.status(403).send('Status code 403, You cannot add a new url without being logged in');
   }
   const longURL = req.body.longURL;
@@ -116,20 +116,20 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = {
     shortURL,
     longURL,
-    userID: user
+    userID: userID
   };
   res.redirect(`/urls/${shortURL}`);
 });
 
 // renders a page in which the user can make a new shortURL by entering a full one. Only is logged in 
 app.get("/urls/new", (req, res) => {
-  const user = req.session['userID'];
-  if (!user) {
+  const userID = req.session['userID'];
+  if (!userID) {
     res.redirect('/login');
   }
   const templateVars = {
     urlDatabase,
-    user: users[user]
+    user: users[userID]
   };
   res.render("urls_new", templateVars);
 });
@@ -146,28 +146,28 @@ app.get('/u/:shortURL', (req, res) => {
 
 // renders a page where a logged in user can edit the long url associated with an existing short url.
 app.get("/urls/:shortURL", (req, res) => {
-  const user = req.session['userID'];
-  if (!user) {
+  const userID = req.session['userID'];
+  if (!userID) {
     return res.status(403).send("403: You must be logged in to update URLs");
   }
-  const urls = urlsByUserID(users[user].id, urlDatabase);
+  const urls = urlsByUserID(users[userID].id, urlDatabase);
   if (urls[req.params.shortURL] === undefined) {
     return res.status(403).send("403: You do not own a url with this ID");
   }
   const templateVars = {
     shortURL: urls[req.params.shortURL].shortURL,
     longURL: urls[req.params.shortURL].longURL,
-    user: users[user]
+    user: users[userID]
   };
   res.render("urls_show", templateVars);
 });
 
 // the Post route for the form in which the user edits the long URL for an existing short URL, updating it in the database
 app.post("/urls/:id", (req, res) => {
-  const user = req.session['userID'];
+  const userID = req.session['userID'];
   const newUrl = req.body.newURL;
   const shortURL = req.body.shortURL;
-  if (!user || user !== urlDatabase[shortURL].userID) {
+  if (!userID || userID !== urlDatabase[shortURL].userID) {
     return res.status(403).send('403: You do not have permission to change this url');
   }
   urlDatabase[shortURL].longURL = newUrl;
@@ -176,12 +176,12 @@ app.post("/urls/:id", (req, res) => {
 
 // a POST route for deleting an existing URL, only if it belongs to the user trying to delete it.
 app.post('/urls/:shortURL/delete', (req, res) => {
-  const user = req.session['userID'];
+  const userID = req.session['userID'];
   const shortURL = req.params.shortURL;
   if (!urlDatabase[shortURL]) {
     return res.status(403).send('403: This url does not exist');
   }
-  if (urlDatabase[shortURL].userID === user) {
+  if (urlDatabase[shortURL].userID === userID) {
     delete urlDatabase[req.body.delete];
     return res.redirect('/urls');
   }
