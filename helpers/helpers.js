@@ -10,7 +10,7 @@ function generateRandomString() {
 }
 
 // takes in an email and if there is a user with that email, returns that user.
-function exsistingUserByEmail(email, users) {
+function getUserByEmail(email, users) {
   for (const user in users) {
     if (users[user]['email'] === email) {
       return users[user];
@@ -31,6 +31,6 @@ function urlsByUserID(id, urlDatabase) {
 
 module.exports = {
   generateRandomString,
-  exsistingUserByEmail,
+  getUserByEmail,
   urlsByUserID
 }
