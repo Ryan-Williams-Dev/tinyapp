@@ -28,8 +28,9 @@
             <td><%= urls[url].shortURL %></td>
             <td><%= urls[url].longURL %></td>
             <td><a href="/urls/<%= url %>"><button class="btn btn-primary">Edit</button></a></td>
-            <td><form method="POST" action=<%= actionString %>>
-              <button class="'btn btn-outline-danger" name="delete" value=<%= url %>>Delete</button>
+            <td><form method="POST" action="/urls/<%= url %>" enctype="application/x-www-form-urlencoded">
+              <input type="hidden" name="_method" value="DELETE">
+              <button class="'btn btn-outline-danger" type="submit" name="delete" value="<%= url %>">Delete</button>
             </form></td>
           </tr>
         <% } %>

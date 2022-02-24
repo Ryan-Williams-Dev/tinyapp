@@ -4,10 +4,20 @@ const PORT = 8080;
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const methodOverride = require('method-override')
 const { generateRandomString, urlsByUserID, getUserByEmail } = require('./helpers/helpers');
 const { urlDatabase, users } = require('./data/DBs');
 
 app.use(bodyParser.urlencoded({extended: true}));
+
+// using method override this way seems more intuitive to me
+app.use(methodOverride(function (req, res) {
+  if (req.body && typeof req.body === 'object' && '_method' in req.body) {
+    var method = req.body._method
+    delete req.body._method
+    return method
+  }
+}))
 app.use(cookieSession({
   name: 'session',
   keys: ['userID'],
@@ -162,8 +172,8 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// the Post route for the form in which the user edits the long URL for an existing short URL, updating it in the database
-app.post("/urls/:id", (req, res) => {
+// the PUT route for the form in which the user edits the long URL for an existing short URL, updating it in the database
+app.put("/urls/:id", (req, res) => {
   const userID = req.session['userID'];
   const newUrl = req.body.newURL;
   const shortURL = req.body.shortURL;
@@ -174,8 +184,8 @@ app.post("/urls/:id", (req, res) => {
   res.redirect('/urls');
 });
 
-// a POST route for deleting an existing URL, only if it belongs to the user trying to delete it.
-app.post('/urls/:shortURL/delete', (req, res) => {
+// a DELETE route for deleting an existing URL, only if it belongs to the user trying to delete it.
+app.delete('/urls/:shortURL', (req, res) => {
   const userID = req.session['userID'];
   const shortURL = req.params.shortURL;
   if (!urlDatabase[shortURL]) {
