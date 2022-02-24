@@ -49,7 +49,7 @@ app.post('/login', (req, res) => {
 
 app.post('/logout', (req, res) => {
   req.session['userID'] = null;
-  res.redirect('/login');
+  res.redirect('/');
 })
 
 app.get('/register', (req, res) => {

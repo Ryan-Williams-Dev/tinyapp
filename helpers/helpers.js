@@ -1,5 +1,5 @@
 // generates a random string for ID purposes
-function generateRandomString() {
+const generateRandomString = function() {
   const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = ' ';
   const charactersLength = characters.length;
@@ -10,7 +10,7 @@ function generateRandomString() {
 }
 
 // takes in an email and if there is a user with that email, returns that user.
-function getUserByEmail(email, users) {
+const getUserByEmail = function(email, users) {
   for (const user in users) {
     if (users[user]['email'] === email) {
       return users[user];
@@ -19,7 +19,7 @@ function getUserByEmail(email, users) {
 }
 
 // fetches all urls for the user id passed into it, returns them in an object with the short url as a the key
-function urlsByUserID(id, urlDatabase) {
+const urlsByUserID = function(id, urlDatabase) {
   const result = {}
   for (const url in urlDatabase) {
     if (urlDatabase[url].userID === id) {
