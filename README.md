@@ -15,8 +15,12 @@ TinyApp is my very first full stack project. Created in week 3 of the Lighthouse
 * ejs
 * bcryptjs
 * body-parser
-* cookie-parser
 * cookie-session
 * chai
 * mocha
 * nodemon
+
+## Getting Started
+
+- Install all dependencies (using the `npm install` command).
+- Run the development web server using the `node express_server.js` command.
