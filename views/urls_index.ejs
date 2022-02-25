@@ -17,6 +17,7 @@
         <tr>
           <th scope="col">Short URL</th>
           <th scope="col">Long URL</th>
+          <th scope="col">Number Of Visits</th>
           <th scope="col">Edit</th>
           <th scope="col">Delete</th>
         </tr>
@@ -27,6 +28,7 @@
             <% let actionString = `/urls/${url}/delete`%>
             <td><%= urls[url].shortURL %></td>
             <td><%= urls[url].longURL %></td>
+            <td><%= urls[url].visitCount %></td> 
             <td><a href="/urls/<%= url %>"><button class="btn btn-primary">Edit</button></a></td>
             <td><form method="POST" action="/urls/<%= url %>" enctype="application/x-www-form-urlencoded">
               <input type="hidden" name="_method" value="DELETE">

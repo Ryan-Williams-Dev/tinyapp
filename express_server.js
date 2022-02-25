@@ -6,7 +6,7 @@ const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const methodOverride = require('method-override')
 const { generateRandomString, urlsByUserID, getUserByEmail } = require('./helpers/helpers');
-const { urlDatabase, users } = require('./data/DBs');
+const { urlDatabase, users, visitData } = require('./data/DBs');
 
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -58,6 +58,7 @@ app.post('/login', (req, res) => {
     return res.status(403).send('Status code 403. Your password does not match');
   }
   req.session['userID'] = user.id;
+  req.session.visitorID = null;
   res.redirect('/urls');
 });
 
@@ -126,8 +127,10 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = {
     shortURL,
     longURL,
-    userID: userID
+    userID: userID,
+    visitCount: 0
   };
+  visitData[shortURL] = [];
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -135,7 +138,7 @@ app.post("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const userID = req.session['userID'];
   if (!userID) {
-    res.redirect('/login');
+    return res.redirect('/login');
   }
   const templateVars = {
     urlDatabase,
@@ -146,11 +149,24 @@ app.get("/urls/new", (req, res) => {
 
 // Redirects user to the corresponding long url, the key functionality of our web-app
 app.get('/u/:shortURL', (req, res) => {
+  const userID = req.session.userID;
   const shortURL = req.params.shortURL;
+  const visID = 'guest-' + generateRandomString()
+  const timeStamp = new Date().toLocaleString('en-US', { timeZone: "America/Los_Angeles" });
   if (!urlDatabase[shortURL]) {
     return res.status(403).send('404: There is no redirect set up for this url');
   }
+  if (!userID && !req.session.visitorID) {
+    req.session.visitorID = visID;
+  }
+  if(userID) {
+    visitData[shortURL].push({ ID: userID, timeStamp })
+  } else if (req.session.visitorID) {
+    visitData[shortURL].push({ ID: req.session.visitorID, timeStamp })
+  }
+  urlDatabase[shortURL].visitCount += 1;
   const longURL = urlDatabase[shortURL].longURL;
+  console.log(visitData);
   res.redirect(longURL);
 });
 
@@ -167,7 +183,9 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: urls[req.params.shortURL].shortURL,
     longURL: urls[req.params.shortURL].longURL,
-    user: users[userID]
+    user: users[userID],
+    urlDatabase,
+    urlVisits: visitData[req.params.shortURL]
   };
   res.render("urls_show", templateVars);
 });

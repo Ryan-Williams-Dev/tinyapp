@@ -1,14 +1,5 @@
+// no more sample URLS becuase it has to be initialised through the route to function properly
 const urlDatabase = {
-  "b2xVn2": {
-    shortURL: 'b2xVn2',
-    longURL: "http://www.lighthouselabs.ca",
-    userID: 'userRandomID'
-  },
-  "9sm5xK": {
-    shortURL: '9sm5xK',
-    longURL: "http://www.google.com",
-    userID: 'user2RandomID'
-  }
 };
 
 const users = {
@@ -20,11 +11,14 @@ const users = {
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "$2a$10$Wi1jK7yg/wR15E9A45oPZunde1ccVvv6uc1jpwbDLIiP6qsusg9TS" // should be the hash for 'dishwasher-funk'
+    password: "$2a$10$Wi1jK7yg/wR15E9A45oPZunde1ccVvv6uc1jpwbDLIiP6qsusg9TS" // 'dishwasher-funk'
   }
 };
 
+const visitData = {}
+
 module.exports = {
   urlDatabase,
-  users
+  users,
+  visitData
 };
